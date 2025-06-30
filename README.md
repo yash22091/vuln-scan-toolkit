@@ -1,4 +1,4 @@
-# 🛡vuln-scan-toolkit
+# vuln-scan-toolkit
 
 A versatile, plug-and-play **vulnerability scanning toolkit** that works seamlessly **on the host** or inside a **Docker container**. It bundles the best open-source security tools to perform comprehensive security checks and generates a **self-contained HTML dashboard** for visualizing results.
 
