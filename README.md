@@ -12,7 +12,7 @@
 
 ---
 
-## 🔧 Scanners Used
+## Scanners Used
 
 | Scanner                | Use Case                                  |
 |------------------------|-------------------------------------------|
@@ -27,7 +27,11 @@
 
 ## Usage Examples
 
-### Docker Mode (Run All Scanners)
+### Docker Mode
+
+> Run in **interactive mode** (`-it`) to allow format prompts or scanner selection.
+
+#### Run All Scanners
 ```bash
 docker run --rm -it \
   -v /tmp/test-deb/:/input \
@@ -36,27 +40,29 @@ docker run --rm -it \
   -s all -p /input/ -o /results
 ````
 
-### Docker Mode (Run a Single Scanner)
+#### Run a Specific Scanner (e.g., Trivy only)
 
 ```bash
 docker run --rm -it \
   -v /tmp/test-deb/:/input \
   -v /root/automatedscanner/results:/results \
   vuln-scan:latest \
-  -s trivy -p /input/* -o /results
+  -s trivy -p /input/ -o /results
 ```
-
-> **NOTE**: The `-it` flag is **required** for interactive format/API prompts.
 
 ---
 
-### Host Mode (All Scanners)
+### Host Mode (Without Docker)
+
+> All tools will auto-install if missing.
+
+#### Scan All Tools
 
 ```bash
 ./dynamic_scan.sh -s all -p /path/to/code -o ./results
 ```
 
-### Host Mode (Single Scanner)
+#### Scan Only KICS (IaC)
 
 ```bash
 ./dynamic_scan.sh -s kics -p /path/to/terraform -o ./results
@@ -64,68 +70,111 @@ docker run --rm -it \
 
 ---
 
-## Interactive Dashboard (HTML)
+## 📊 Interactive Dashboard (HTML)
 
-After the scan completes, a **dashboard** is generated:
+After a scan completes, an HTML dashboard is generated at:
 
 ```bash
 ./results/Dashboard.html
 ```
 
-To view it:
+### Serve Dashboard via Python
 
 ```bash
-cd results
+cd ./results
 python3 -m http.server 9000
-# Open http://localhost:9000 in your browser
 ```
 
-> The dashboard includes **interactive tables** for Trivy, Grype, Hadolint, SBOM, and embeds Dependency-Check/KICS HTML output.
+Then open [http://localhost:9000](http://localhost:9000) in your browser.
+
+The dashboard supports:
+
+* Paginated, searchable tables for:
+
+  * Trivy vulnerabilities
+  * Grype matches
+  * Hadolint lint findings
+  * SBOM (Syft CycloneDX)
+* Embedded HTML for:
+
+  * Dependency-Check reports
+  * KICS analysis
+
+---
+
+## Tools Integrated and How They're Leveraged
+
+| Tool                 | Purpose                            | Targets                                |
+| -------------------- | ---------------------------------- | -------------------------------------- |
+| **Dependency-Check** | CVEs in 3rd-party dependencies     | JARs, NPM, NuGet, Python, etc.         |
+| **Trivy**            | FS/image/IaC vulnerability scanner | Filesystem, Docker images, IaC configs |
+| **Grype**            | Image/Dir/SBOM CVE scanner         | Linux packages and layers              |
+| **KICS**             | IaC misconfiguration scanner       | Terraform files                        |
+| **Hadolint**         | Dockerfile linter                  | Dockerfiles                            |
+| **Syft**             | SBOM generator                     | Any directory or image                 |
 
 ---
 
 ## Use Cases
 
-* CI/CD pipeline security validation
-* Manual security testing of code drops/packages
-* Offline/air-gapped security assessments
-* Quick SBOM + CVE mapping from `.deb`, `.rpm`, `.jar`, `.zip`
-* IaC & Dockerfile misconfiguration detection
+* Secure open-source project drops (JAR, ZIP, RPM, DEB)
+* Pre-deployment validation in CI/CD pipelines
+* Offline/air-gapped vulnerability analysis
+* Infrastructure-as-Code (IaC) security hardening
+* SBOM generation and CVE impact review
 
 ---
 
-## Important Notes
+##  Notes
 
-* **Dependency-Check** will download the NVD database on first use (\~10–15 mins)
-* Scans are fully offline after initial database population
-* KICS and Hadolint are run against Terraform and Dockerfile paths respectively
-* SBOM is generated using Syft (CycloneDX JSON) and visualized in the dashboard
-
----
-
-## Requirements (for Host Mode)
-
-* bash, curl, unzip, tar, jq, git
-* Java Runtime (default-jre-headless)
-* [.NET Runtime 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
-* Internet access (initial DB/tool install)
-
-> All tools are **auto-installed** in host mode if not found.
+* **Dependency-Check takes \~15 minutes** on first run to populate the NVD database (in both Docker and Host).
+* Subsequent scans reuse that data unless explicitly removed.
+* You can pre-pull and reuse the Docker image without rebuilding.
+* Hadolint results are now fixed and visualized correctly in the HTML dashboard.
 
 ---
 
-## Docker Image Build (Optional)
+## Docker Build (Optional)
 
-To build locally:
+If building manually:
 
 ```bash
 docker build -t vuln-scan:latest .
 ```
 
-> The image includes all tools preinstalled, including Dependency-Check, Trivy, Grype, Hadolint, KICS, Syft, and .NET runtime.
+---
+
+## Folder Structure (Example)
+
+```
+.
+├── Dockerfile
+├── dynamic_scan.sh
+├── scan-results/
+│   ├── trivy-report.json
+│   ├── grype-report.json
+│   ├── hadolint-report.json
+│   ├── sbom-syft.cyclonedx.json
+│   └── Dashboard.html
+```
 
 ---
 
-MIT License · Maintained by Yash Patel
+## Requirements (Host Mode Only)
 
-```
+* bash, curl, unzip, tar, jq, git
+* Java Runtime (`default-jre-headless`)
+* .NET Runtime 8.0 (`dotnet-install.sh`)
+* Internet access (for first-time installs)
+
+> All binaries like Trivy, Grype, KICS, Hadolint, and Syft are auto-installed if missing.
+
+---
+
+## Tips
+
+* You can scan `.jar`, `.zip`, `.deb`, `.rpm`, `.tf`, `Dockerfile`, etc.
+* SBOM generated with Syft (CycloneDX JSON) is visualized in the HTML dashboard.
+* All scanner outputs go to the `-o` folder (default `./scan-results`)
+
+---
