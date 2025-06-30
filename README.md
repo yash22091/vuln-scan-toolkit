@@ -42,7 +42,6 @@ A versatile, plug-and-play **vulnerability scanning toolkit** that works seamles
 ## Usage
 ### Docker Mode (RECOMMENDED)
 
-```bash
 docker run -it --rm -v $(pwd):/input vuln-scan-toolkit -p /input -s all
 
     IMPORTANT: Run with -it (interactive) so the scanner can ask for API keys or format options.
