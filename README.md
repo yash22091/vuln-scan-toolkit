@@ -70,7 +70,7 @@ docker run --rm -it \
 
 ---
 
-## 📊 Interactive Dashboard (HTML)
+## Interactive Dashboard (HTML)
 
 After a scan completes, an HTML dashboard is generated at:
 
