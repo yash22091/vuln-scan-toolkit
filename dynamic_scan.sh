@@ -509,6 +509,11 @@ if [[ -f "$OUTPUT_DIR/trivy-report.json" ]]; then
   echo "  <section><h2>Trivy</h2><table id='trivy-table'><thead><tr><th>Package</th><th>Version</th><th>Severity</th><th>CVE</th><th>Title</th></tr></thead><tbody></tbody></table></section>"
 fi
 
+# Trivy Misconfigurations
+if [[ -f "$OUTPUT_DIR/trivy-report.json" ]]; then
+  echo "  <section><h2>Trivy Misconfigurations</h2><table id='trivy-misconf'><thead><tr><th>ID</th><th>Title</th><th>Severity</th><th>Status</th><th>Message</th><th>Resolution</th><th>Link</th></tr></thead><tbody></tbody></table></section>"
+fi
+
 # Grype
 if [[ -f "$OUTPUT_DIR/grype-report.json" ]]; then
   echo "  <section><h2>Grype</h2><table id='grype-table'><thead><tr><th>Package</th><th>Version</th><th>Type</th><th>CVE</th><th>Severity</th></tr></thead><tbody></tbody></table></section>"
@@ -552,6 +557,25 @@ Promise.all([
       });
     });
     $('#trivy-table').DataTable();
+  }
+  // Trivy Misconfigurations
+  if (trivy.Results) {
+    trivy.Results.forEach(r => {
+      if (r.Class === "config" && r.Misconfigurations) {
+        r.Misconfigurations.forEach(m => {
+          $('#trivy-misconf tbody').append(`<tr>
+            <td>${escapeHTML(m.ID)}</td>
+            <td>${escapeHTML(m.Title)}</td>
+            <td>${escapeHTML(m.Severity)}</td>
+            <td>${escapeHTML(m.Status)}</td>
+            <td>${escapeHTML(m.Message)}</td>
+            <td>${escapeHTML(m.Resolution)}</td>
+            <td><a href="${escapeHTML(m.PrimaryURL)}" target="_blank">AVD</a></td>
+          </tr>`);
+        });
+      }
+    });
+    $('#trivy-misconf').DataTable();
   }
 
   // Grype
