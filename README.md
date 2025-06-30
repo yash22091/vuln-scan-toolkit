@@ -25,6 +25,17 @@
 
 ---
 
+## Getting Started
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/yash22091/vuln-scan-toolkit.git
+cd vuln-scan-toolkit
+chmod +x dynamic_scan.sh
+docker build -t vuln-scan:latest . (For Container Build Locally)
+```
+
 ## Usage Examples
 
 ### Docker Mode
