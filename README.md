@@ -1,160 +1,131 @@
-# vuln-scan-toolkit
+# vuln-scan — Automated Multi-Tool Vulnerability Scanner (Host + Docker)
 
-A versatile, plug-and-play **vulnerability scanning toolkit** that works seamlessly **on the host** or inside a **Docker container**. It bundles the best open-source security tools to perform comprehensive security checks and generates a **self-contained HTML dashboard** for visualizing results.
+`vuln-scan` is a **comprehensive, plug-and-play vulnerability scanning utility** that works seamlessly in **both host mode** and **containerized environments**. It bundles multiple leading open-source security scanners to scan application code, binaries, Dockerfiles, IaC, and SBOMs.
 
----
+### Features
 
-## Key Features
-
-- **Dual Environment Support**: Run as a container or directly on your host system
-- **Scans Code, Containers, IaC, Packages, Dockerfiles, SBOMs**
-- **Interactive Dashboard**: Clean HTML report with tables, filters, and pagination
-- **Supports Archives**: `.zip`, `.tar.gz`, `.deb`, `.rpm`
-- **Auto-Detection**: Scanners auto-selected based on input contents
-- **Self-Contained Script**: One `dynamic_scan.sh` does everything
+- Unified scanner wrapper with interactive and CLI modes
+- Supports containerized execution with volume mounting
+- Auto-generates a searchable, paginated HTML dashboard
+- Extracts archives (`.zip`, `.tar.gz`, `.deb`, `.rpm`) before scanning
+- Automatically installs tools in host-mode if not present
 
 ---
 
-## Tools Integrated and How They're Leveraged
+## 🔧 Scanners Used
 
-| Tool | Use Case | What It Scans |
-|------|----------|---------------|
-| **Dependency-Check** | Detects known vulnerabilities (CVEs) in 3rd-party Java, JS, Python, etc. | `.jar`, `pom.xml`, `package.json`, `go.mod` |
-| **Trivy** | Vulnerability and config scanner | Filesystem, Docker images, IaC |
-| **Grype** | Vulnerability scanner using SBOM or direct directory/image scan | Linux packages, container layers |
-| **KICS** | Infrastructure as Code misconfiguration scanner | `.tf` (Terraform files) |
-| **Hadolint** | Dockerfile best practices and linting | `Dockerfile` |
-| **Syft** | SBOM (CycloneDX JSON) generator | Any directory or image contents |
+| Scanner                | Use Case                                  |
+|------------------------|-------------------------------------------|
+| OWASP Dependency-Check | 3rd-party CVEs in JARs, packages          |
+| Trivy                  | CVE & misconfig scan (FS & containers)    |
+| Grype                  | Advanced CVE scanner with SBOM support    |
+| KICS                   | IaC misconfiguration detection (Terraform)|
+| Hadolint               | Dockerfile best practice linter           |
+| Syft                   | SBOM generator (CycloneDX JSON)           |
+
+---
+
+## Usage Examples
+
+### Docker Mode (Run All Scanners)
+```bash
+docker run --rm -it \
+  -v /tmp/test-deb/:/input \
+  -v /root/automatedscanner/results:/results \
+  vuln-scan:latest \
+  -s all -p /input/ -o /results
+````
+
+### Docker Mode (Run a Single Scanner)
+
+```bash
+docker run --rm -it \
+  -v /tmp/test-deb/:/input \
+  -v /root/automatedscanner/results:/results \
+  vuln-scan:latest \
+  -s trivy -p /input/* -o /results
+```
+
+> **NOTE**: The `-it` flag is **required** for interactive format/API prompts.
+
+---
+
+### Host Mode (All Scanners)
+
+```bash
+./dynamic_scan.sh -s all -p /path/to/code -o ./results
+```
+
+### Host Mode (Single Scanner)
+
+```bash
+./dynamic_scan.sh -s kics -p /path/to/terraform -o ./results
+```
+
+---
+
+## Interactive Dashboard (HTML)
+
+After the scan completes, a **dashboard** is generated:
+
+```bash
+./results/Dashboard.html
+```
+
+To view it:
+
+```bash
+cd results
+python3 -m http.server 9000
+# Open http://localhost:9000 in your browser
+```
+
+> The dashboard includes **interactive tables** for Trivy, Grype, Hadolint, SBOM, and embeds Dependency-Check/KICS HTML output.
 
 ---
 
 ## Use Cases
 
-- **CI/CD Security Gate**
-- **DevSecOps Pipelines**
-- **SBOM Audits & Compliance**
-- **Pre-deployment Container Scans**
-- **IaC Security Review**
-- **Local Security Checks (Developers)**
+* CI/CD pipeline security validation
+* Manual security testing of code drops/packages
+* Offline/air-gapped security assessments
+* Quick SBOM + CVE mapping from `.deb`, `.rpm`, `.jar`, `.zip`
+* IaC & Dockerfile misconfiguration detection
 
 ---
 
-## Usage
-### Docker Mode (RECOMMENDED)
-```
-docker run -it --rm -v $(pwd):/input vuln-scan-toolkit -p /input -s all
-```
-IMPORTANT: Run with -it (interactive) so the scanner can ask for API keys or format options.
+## Important Notes
 
-The results will be saved in /input/scan-results (mounted from your host).
+* **Dependency-Check** will download the NVD database on first use (\~10–15 mins)
+* Scans are fully offline after initial database population
+* KICS and Hadolint are run against Terraform and Dockerfile paths respectively
+* SBOM is generated using Syft (CycloneDX JSON) and visualized in the dashboard
 
-* `-p /input`: Path to scan inside container
-* `-s all`: Run all supported scanners
+---
 
-> The results will be in `/input/scan-results` on your host.
+## Requirements (for Host Mode)
 
-### Live Dashboard via Python HTTP Server
+* bash, curl, unzip, tar, jq, git
+* Java Runtime (default-jre-headless)
+* [.NET Runtime 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+* Internet access (initial DB/tool install)
+
+> All tools are **auto-installed** in host mode if not found.
+
+---
+
+## Docker Image Build (Optional)
+
+To build locally:
 
 ```bash
-cd scan-results
-python3 -m http.server 9000
-# Open http://localhost:9000/Dashboard.html in browser
+docker build -t vuln-scan:latest .
 ```
 
+> The image includes all tools preinstalled, including Dependency-Check, Trivy, Grype, Hadolint, KICS, Syft, and .NET runtime.
+
 ---
 
-### Host Mode
+MIT License · Maintained by Yash Patel
 
-Just clone the repo and run:
-
-```bash
-chmod +x dynamic_scan.sh
-./dynamic_scan.sh -p ./your_project -s all
 ```
-
-> Works on any modern Linux system. Installs missing tools automatically.
-
----
-
-## ommand-Line Options
-
-| Flag | Description                                                  |
-| ---- | ------------------------------------------------------------ |
-| `-p` | Path to scan (dir/archive/image)                             |
-| `-s` | Comma-separated scanners to use (`trivy,grype,...`) or `all` |
-| `-o` | Output folder (default: `./scan-results`)                    |
-| `-a` | Auto-detect scanners based on file types                     |
-| `-g` | Grype source (e.g. `dir:/path`, `docker:nginx`)              |
-| `-h` | Show help                                                    |
-
----
-
-## Sample Dashboard Screenshot
-
-![Sample Dashboard](docs/sample-dashboard.png)
-
-> Dashboard includes searchable, paginated tables for:
->
-> * Trivy vulnerabilities
-> * Grype scan results
-> * SBOM components (from Syft)
-> * Dockerfile issues (Hadolint)
-> * And embedded HTML reports from Dependency-Check, KICS
-
----
-
-##  Requirements
-
-For host mode (auto-installed if missing):
-
-* Bash
-* curl, unzip, git
-* Java 11+, Go 1.24 (for KICS)
-* .NET 8 Runtime (for Dependency-Check)
-
-For container mode:
-
-* Just Docker. Everything is baked in.
-
----
-
-## Example: Scan Dockerfile and Terraform
-
-```bash
-./dynamic_scan.sh -p ./project-dir -s hadolint,kics
-```
-
-* Hadolint will lint your Dockerfile
-* KICS will scan Terraform configs
-
----
-
-## Example: Use in CI
-
-```yaml
-- name: Run Vulnerability Scan
-  run: |
-    docker run --rm -v $PWD:/input vuln-scan-toolkit -p /input -s all
-```
-
-> Add artifact upload for `scan-results/Dashboard.html`
-
----
-
-## License
-
-MIT © 2024+
-
----
-
-## Contribute
-
-Pull requests are welcome. You can:
-
-* Add support for more formats (SARIF, SPDX)
-* Improve HTML dashboard UI
-* Add auto-upload to S3/GitHub Pages
-
----
-
-## Star This Repo If You Find It Useful!
