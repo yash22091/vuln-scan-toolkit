@@ -140,13 +140,13 @@ For container mode:
 
 ---
 
-## 📄 License
+## License
 
 MIT © 2024+
 
 ---
 
-## 🙌 Contribute
+## Contribute
 
 Pull requests are welcome. You can:
 
@@ -156,4 +156,4 @@ Pull requests are welcome. You can:
 
 ---
 
-## ⭐ Star This Repo If You Find It Useful!
+## Star This Repo If You Find It Useful!
